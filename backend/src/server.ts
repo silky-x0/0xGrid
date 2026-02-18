@@ -45,7 +45,7 @@ function broadcast(message: ServerMessage): void {
 // a `.data` property shaped like SocketData". Without it, TypeScript
 // infers `ws.data` as `undefined` everywhere — causing all the type errors.
 const server = Bun.serve<SocketData>({
-  port: 8080,
+  port: Number(process.env.PORT) || 8080,
 
   fetch(req, server) {
     const color = PALETTE[colorIndex % PALETTE.length] ?? PALETTE[0];

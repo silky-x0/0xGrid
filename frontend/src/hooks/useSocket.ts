@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { useGameStore } from "@/store/gameStore";
 import type { Cell } from "@/store/gameStore";
 
-const WS_URL = process.env.WS_URL || "ws://localhost:8080";
+const WS_URL = process.env.NEXT_PUBLIC_WSS_URL || "ws://localhost:8080";
 
 type ServerMessage =
   | { type: "HELLO"; payload: { id: string; color: string } }
