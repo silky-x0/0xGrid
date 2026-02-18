@@ -4,6 +4,9 @@ import type { Cell, ClientMessage, ServerMessage, SocketData } from "./types";
 // our temp db for now
 const gridState = new Map<string, Cell>();
 
+const PALETTE = ["#06b6d4", "#f43f5e", "#f59e0b", "#84cc16", "#a855f7", "#3b82f6", "#ec4899", "#10b981"] as const;
+let colorIndex = 0;
+
 // A `Set` is like an array, but every item is unique.
 // We use it to track every currently-connected WebSocket client.
 // When we want to broadcast a message to everyone, we loop over this Set.
@@ -45,8 +48,10 @@ const server = Bun.serve<SocketData>({
   port: 8080,
 
   fetch(req, server) {
+    const color = PALETTE[colorIndex % PALETTE.length] ?? PALETTE[0];
+    colorIndex++;
     const upgraded = server.upgrade(req, {
-      data: { id: crypto.randomUUID() },
+      data: { id: crypto.randomUUID(), color },
     });
     if (upgraded) {
       return undefined;
@@ -61,12 +66,19 @@ const server = Bun.serve<SocketData>({
       connectedClients.add(ws);
       console.log(`Client ${ws.data.id} connected. Total clients: ${connectedClients.size}`);
 
+      const color = ws.data.color;
+
+      // Tell the client who they are
+      ws.send(JSON.stringify({
+        type: "HELLO",
+        payload: { id: ws.data.id, color },
+      }));
+
+      // Send the current grid state
       const initialState: ServerMessage = {
         type: "GRID_STATE",
         payload: Array.from(gridState.values()),
       };
-
-      // ws.send() sends a message to THIS specific client only (not broadcast).
       ws.send(JSON.stringify(initialState));
     },
 
@@ -85,18 +97,7 @@ const server = Bun.serve<SocketData>({
       switch (message.type) {
         case "CAPTURE_CELL": {
           const ownerId = ws.data.id;
-
-          const palette = ["#06b6d4", "#f43f5e", "#f59e0b", "#84cc16", "#a855f7"] as const;
-
-          // To pick a consistent color from the UUID, we take the first character
-          // of the UUID string and get its char code. This gives a number we can
-          // use with modulo (%) to index into the palette.
-          // It's not perfectly uniform, but it's stable and good enough for now.
-          //
-          // The `?? palette[0]` is a "nullish coalescing" fallback — if the array
-          // lookup somehow returns undefined, we default to the first color.
-          // This satisfies TypeScript's type checker (palette[n] is string | undefined).
-          const color = palette[ownerId.charCodeAt(0) % palette.length] ?? palette[0];
+          const color = ws.data.color;
 
           const newCell: Cell = {
             id: message.cellId,

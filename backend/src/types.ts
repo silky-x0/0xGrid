@@ -13,10 +13,11 @@ export type ClientMessage = {
 };
 
 export type ServerMessage = {
-    type: "CELL_UPDATED" | "GRID_STATE" | "ERROR";
+    type: "CELL_UPDATED" | "GRID_STATE" | "HELLO" | "ERROR";
     payload: unknown;
 };
 
-export type  SocketData = {
+export type SocketData = {
     id: string;
+    color: string;
 };
