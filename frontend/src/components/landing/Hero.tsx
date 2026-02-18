@@ -2,6 +2,7 @@
 
 import { motion, Variants } from "framer-motion";
 import { Boxes } from "../ui/background-boxes";
+import { useRouter } from "next/navigation";
 
 // Palette:
 // #222831 — darkest background
@@ -19,6 +20,7 @@ const fadeUp: Variants = {
 };
 
 export default function Hero() {
+  const router = useRouter();
   return (
     <div
       className='min-h-screen w-full overflow-hidden relative flex items-center justify-center'
@@ -117,6 +119,7 @@ export default function Hero() {
                 "0 0 28px rgba(0,173,181,0.55)")
             }
             onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "none")}
+            onClick={() => router.push("/game")}
           >
             Start Game
             <span className='ml-2 inline-block transition-transform duration-200 group-hover:translate-x-1'>
