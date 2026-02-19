@@ -6,11 +6,9 @@ export type Cell = {
     timestamp: number;
 };
 
-export type ClientMessage = {
-    type: "CAPTURE_CELL";
-    cellId: string;
-    
-};
+export type ClientMessage = 
+    | { type: "CAPTURE_CELL"; cellId: string }
+    | { type: "HELLO"; userId?: string };
 
 export type ServerMessage = {
     type: "CELL_UPDATED" | "GRID_STATE" | "HELLO" | "ERROR";

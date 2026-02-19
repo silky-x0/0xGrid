@@ -4,8 +4,15 @@ import type { Cell, ClientMessage, ServerMessage, SocketData } from "./types";
 // our temp db for now
 const gridState = new Map<string, Cell>();
 
-const PALETTE = ["#06b6d4", "#f43f5e", "#f59e0b", "#84cc16", "#a855f7", "#3b82f6", "#ec4899", "#10b981"] as const;
 let colorIndex = 0;
+
+function getGoldenAngleColor(index: number): string {
+  // 137.5 is the golden angle in degrees.
+  // It ensures that even with a simple counter, colors are maximally distant 
+  // from each other on the color wheel, preventing collisions for a LONG time.
+  const hue = (index * 137.508) % 360; 
+  return `hsl(${hue}, 70%, 50%)`;
+}
 
 // A `Set` is like an array, but every item is unique.
 // We use it to track every currently-connected WebSocket client.
@@ -48,10 +55,8 @@ const server = Bun.serve<SocketData>({
   port: Number(process.env.PORT) || 8080,
 
   fetch(req, server) {
-    const color = PALETTE[colorIndex % PALETTE.length] ?? PALETTE[0];
-    colorIndex++;
     const upgraded = server.upgrade(req, {
-      data: { id: crypto.randomUUID(), color },
+      data: { id: "", color: "" }, // Placeholder until HELLO
     });
     if (upgraded) {
       return undefined;
@@ -62,24 +67,10 @@ const server = Bun.serve<SocketData>({
   websocket: {
 
     // Fires when a new client successfully connects.
+    // Fires when a new client successfully connects.
     open(ws) {
       connectedClients.add(ws);
-      console.log(`Client ${ws.data.id} connected. Total clients: ${connectedClients.size}`);
-
-      const color = ws.data.color;
-
-      // Tell the client who they are
-      ws.send(JSON.stringify({
-        type: "HELLO",
-        payload: { id: ws.data.id, color },
-      }));
-
-      // Send the current grid state
-      const initialState: ServerMessage = {
-        type: "GRID_STATE",
-        payload: Array.from(gridState.values()),
-      };
-      ws.send(JSON.stringify(initialState));
+      console.log(`Client connected (waiting for HELLO). Total clients: ${connectedClients.size}`);
     },
 
     // Fires when a client sends a message to the server.
@@ -95,7 +86,43 @@ const server = Bun.serve<SocketData>({
       console.log("Received:", message);
 
       switch (message.type) {
+        case "HELLO": {
+          // Client is introducing themselves.
+          // If they sent a userId, use it. Otherwise generate new.
+          const userId = message.userId || crypto.randomUUID();
+          
+          // Deterministic color from ID so it persists across sessions/restarts
+          // Simple string hash
+          let hash = 0;
+          for (let i = 0; i < userId.length; i++) {
+            hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+          }
+          // Use absolute value and golden angle
+          const color = getGoldenAngleColor(Math.abs(hash));
+
+          ws.data.id = userId;
+          ws.data.color = color;
+
+          console.log(`Client identified as ${userId.slice(0, 8)}... (${color})`);
+
+          // Confirm identity back to client
+          ws.send(JSON.stringify({
+            type: "HELLO",
+            payload: { id: userId, color },
+          }));
+
+          // NOW send the grid state
+          ws.send(JSON.stringify({
+            type: "GRID_STATE",
+            payload: Array.from(gridState.values()),
+          }));
+          break;
+        }
+
         case "CAPTURE_CELL": {
+          // Ignore captures from unidentified clients
+          if (!ws.data.id) return;
+
           const ownerId = ws.data.id;
           const color = ws.data.color;
 

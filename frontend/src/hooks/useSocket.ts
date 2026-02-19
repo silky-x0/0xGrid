@@ -27,6 +27,13 @@ export function useSocket() {
     ws.onopen = () => {
       setConnected(true);
       console.log("[socket] connected");
+      
+      // Identify ourselves
+      const storedId = localStorage.getItem("utils-grid-userid");
+      ws.send(JSON.stringify({ 
+        type: "HELLO", 
+        userId: storedId || undefined 
+      }));
     };
 
     ws.onmessage = (event) => {
@@ -40,7 +47,9 @@ export function useSocket() {
 
       switch (msg.type) {
         case "HELLO": {
-          setCurrentUser(msg.payload.id, msg.payload.color);
+          const { id, color } = msg.payload;
+          setCurrentUser(id, color);
+          localStorage.setItem("utils-grid-userid", id);
           break;
         }
 
