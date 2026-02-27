@@ -12,7 +12,8 @@ type ServerMessage =
 
 export function useSocket() {
   const wsRef = useRef<WebSocket | null>(null);
-  const { initGrid, applyServerUpdate, setConnected, setCurrentUser } = useGameStore();
+  const { initGrid, applyServerUpdate, setConnected, setCurrentUser } =
+    useGameStore();
 
   const sendCapture = useCallback((row: number, col: number) => {
     const ws = wsRef.current;
@@ -27,13 +28,15 @@ export function useSocket() {
     ws.onopen = () => {
       setConnected(true);
       console.log("[socket] connected");
-      
+
       // Identify ourselves
-      const storedId = localStorage.getItem("utils-grid-userid");
-      ws.send(JSON.stringify({ 
-        type: "HELLO", 
-        userId: storedId || undefined 
-      }));
+      const storedId = sessionStorage.getItem("utils-grid-userid");
+      ws.send(
+        JSON.stringify({
+          type: "HELLO",
+          userId: storedId || undefined,
+        }),
+      );
     };
 
     ws.onmessage = (event) => {
@@ -49,7 +52,7 @@ export function useSocket() {
         case "HELLO": {
           const { id, color } = msg.payload;
           setCurrentUser(id, color);
-          localStorage.setItem("utils-grid-userid", id);
+          sessionStorage.setItem("utils-grid-userid", id);
           break;
         }
 
