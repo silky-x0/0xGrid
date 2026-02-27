@@ -2,7 +2,7 @@
 
 Real-time grid battle game where players compete to capture territory on a shared board. Every click claims a cell, and the change is instantly visible to all connected players.
 
-<video src="frontend/public/demo.mp4" controls="controls" width="100%">
+<video src="https://github.com/silky-x0/0xGrid/raw/main/frontend/public/demo.mp4" controls="controls" width="100%" muted="muted" playsinline="playsinline">
 </video>
 
 ---
