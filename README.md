@@ -1,14 +1,17 @@
-# 0xGrid
+<h1 align="center">0xGrid</h1>
 
-Real-time grid battle game. Players compete to capture territory on a shared board. Every click claims a cell and the change is instantly visible to all connected players.
+Real-time grid battle game where players compete to capture territory on a shared board. Every click claims a cell, and the change is instantly visible to all connected players.
+
+<video src="frontend/public/demo.mp4" controls="controls" width="100%">
+</video>
 
 ---
 
-## Architecture
+<h2 align="center">Architecture</h2>
 
 The project is split into two independent services:
 
-```
+```text
 0xGrid/
 ├── frontend/   Next.js app (React 19, Tailwind CSS v4)
 └── backend/    Bun WebSocket server (TypeScript)
@@ -16,7 +19,7 @@ The project is split into two independent services:
 
 The frontend and backend communicate exclusively over WebSockets. There is no REST API.
 
-### Data Flow
+<h3 align="center">Data Flow</h3>
 
 1. User clicks a cell in the browser.
 2. The frontend sends a `CAPTURE_CELL` message to the backend over WebSocket.
@@ -25,7 +28,7 @@ The frontend and backend communicate exclusively over WebSockets. There is no RE
 
 ---
 
-## Tech Stack
+<h2 align="center">Tech Stack</h2>
 
 | Layer           | Technology           | Purpose                          |
 | --------------- | -------------------- | -------------------------------- |
@@ -35,24 +38,24 @@ The frontend and backend communicate exclusively over WebSockets. There is no RE
 | Language        | TypeScript           | Type safety across both services |
 | Real-time       | Bun native WebSocket | Client-server communication      |
 | State (Phase 1) | In-memory Map        | Grid state store                 |
-| State (Phase 2) | Redis                | Persistent, shared grid state    |
+| State (Phase 2) | Redis or Prisma      | Persistent, shared grid state    |
 
 ---
 
-## Getting Started
+<h2 align="center">Getting Started</h2>
 
-### Prerequisites
+<h3>Prerequisites</h3>
 
 - [Bun](https://bun.sh) v1.0 or later installed on your system.
 
-### Clone the repository
+<h3>Clone the repository</h3>
 
 ```bash
 git clone https://github.com/silky-x0/0xGrid.git
 cd 0xGrid
 ```
 
-### Backend
+<h3>Backend</h3>
 
 ```bash
 cd backend
@@ -70,7 +73,13 @@ ws.onopen = () => console.log("Connected");
 ws.onmessage = (e) => console.log("Message:", JSON.parse(e.data));
 ```
 
-### Frontend
+<h3>Frontend</h3>
+
+Before starting, if you want to point to a remote server, create `.env` in the frontend directory:
+
+```env
+NEXT_PUBLIC_WSS_URL=wss://your-backend.url
+```
 
 ```bash
 cd frontend
@@ -78,33 +87,35 @@ bun install
 bun run dev
 ```
 
-The Next.js app starts on `http://localhost:3000`.
+The app starts on `http://localhost:3000`.
 
 ---
 
-## WebSocket Protocol
+<h2 align="center">WebSocket Protocol</h2>
 
 All messages are JSON strings. The client and server communicate using the following message types.
 
-### Client to Server
+<h3>Client to Server</h3>
 
-| Type           | Payload              | Description              |
-| -------------- | -------------------- | ------------------------ |
-| `CAPTURE_CELL` | `{ cellId: string }` | Claim a cell on the grid |
+| Type           | Payload               | Description                                 |
+| -------------- | --------------------- | ------------------------------------------- |
+| `HELLO`        | `{ userId?: string }` | Sends saved ID on connect to resume session |
+| `CAPTURE_CELL` | `{ cellId: string }`  | Claims a cell on the grid                   |
 
-### Server to Client
+<h3>Server to Client</h3>
 
-| Type           | Payload  | Description                           |
-| -------------- | -------- | ------------------------------------- |
-| `GRID_STATE`   | `Cell[]` | Full grid snapshot sent on connection |
-| `CELL_UPDATED` | `Cell`   | Broadcast when any cell is captured   |
-| `ERROR`        | `string` | Error message from the server         |
+| Type           | Payload                         | Description                           |
+| -------------- | ------------------------------- | ------------------------------------- |
+| `HELLO`        | `{ id: string, color: string }` | Identifies the client and their color |
+| `GRID_STATE`   | `Cell[]`                        | Full grid snapshot sent on connection |
+| `CELL_UPDATED` | `Cell`                          | Broadcast when any cell is captured   |
+| `ERROR`        | `{ message: string }`           | Error message from the server         |
 
-### Cell shape
+<h3>Cell shape</h3>
 
 ```typescript
 type Cell = {
-  id: string; // Format: "x{col}-y{row}", e.g. "x5-y10"
+  id: string; // Format: "{row}-{col}", e.g. "5-10"
   ownerId: string; // UUID of the player who captured this cell
   color: string; // Hex color assigned to that player
   timestamp: number; // Unix timestamp in milliseconds
@@ -113,32 +124,29 @@ type Cell = {
 
 ---
 
-## Development Roadmap
+<h2 align="center">Development Roadmap</h2>
 
-### Phase 1 - Foundation (current)
+<h3>Phase 1 - Foundation (Completed)</h3>
 
 - [x] Backend WebSocket server with Bun
 - [x] In-memory grid state with `Map`
-- [x] Per-client UUID identity via `ws.data`
+- [x] Per-client persistent identity mapping via Session Storage
 - [x] Broadcast on cell capture
-- [ ] Frontend grid component
-- [ ] Connect frontend to WebSocket
+- [x] Frontend grid component with responsive panning/zooming
 
-### Phase 2 - Real-time at Scale
+<h3>Phase 2 - Real-time at Scale</h3>
 
-- [ ] Replace in-memory Map with Redis
+- [ ] Implement database integration (Prisma/PostgreSQL) for persistence
 - [ ] Handle server restarts without losing grid state
-- [ ] Cooldown system to prevent spam
+- [ ] Establish strict cooldown system to prevent spam
 
-### Phase 3 - Game Loop
+<h3>Phase 3 - Game Loop</h3>
 
-- [ ] Leaderboard (top capturers)
-- [ ] User nicknames
-- [ ] Minimap for large grids
-- [ ] Animations and sound effects
+- [ ] Global Leaderboard tracking top capturers
+- [ ] Configurable User nicknames
+- [ ] Minimap for large geographic grids
+- [ ] Smooth CSS Animations and sound effects
 
 ---
 
-## License
-
-MIT
+License: MIT
