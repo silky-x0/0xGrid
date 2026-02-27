@@ -8,9 +8,9 @@ let colorIndex = 0;
 
 function getGoldenAngleColor(index: number): string {
   // 137.5 is the golden angle in degrees.
-  // It ensures that even with a simple counter, colors are maximally distant 
+  // It ensures that even with a simple counter, colors are maximally distant
   // from each other on the color wheel, preventing collisions for a LONG time.
-  const hue = (index * 137.508) % 360; 
+  const hue = (index * 137.508) % 360;
   return `hsl(${hue}, 70%, 50%)`;
 }
 
@@ -24,9 +24,7 @@ function getGoldenAngleColor(index: number): string {
 
 const connectedClients = new Set<ServerWebSocket<SocketData>>();
 
-
 function broadcast(message: ServerMessage): void {
-
   // WebSockets can only transmit strings (or binary), not raw JS objects.
 
   const serialized = JSON.stringify(message);
@@ -35,7 +33,6 @@ function broadcast(message: ServerMessage): void {
     client.send(serialized);
   }
 }
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE SERVER
@@ -61,16 +58,30 @@ const server = Bun.serve<SocketData>({
     if (upgraded) {
       return undefined;
     }
-    return new Response("0xGrid WebSocket Server is running.", { status: 200 });
+    const url = new URL(req.url);
+    if (url.pathname === "/health") {
+      return new Response(
+        JSON.stringify({
+          status: "ok",
+          message: "0xGrid backend is running properly.",
+        }),
+        {
+          headers: { "Content-Type": "application/json" },
+          status: 200,
+        },
+      );
+    }
+
+    return new Response("Not Found", { status: 404 });
   },
 
   websocket: {
-
-    // Fires when a new client successfully connects.
     // Fires when a new client successfully connects.
     open(ws) {
       connectedClients.add(ws);
-      console.log(`Client connected (waiting for HELLO). Total clients: ${connectedClients.size}`);
+      console.log(
+        `Client connected (waiting for HELLO). Total clients: ${connectedClients.size}`,
+      );
     },
 
     // Fires when a client sends a message to the server.
@@ -90,7 +101,7 @@ const server = Bun.serve<SocketData>({
           // Client is introducing themselves.
           // If they sent a userId, use it. Otherwise generate new.
           const userId = message.userId || crypto.randomUUID();
-          
+
           // Deterministic color from ID so it persists across sessions/restarts
           // Simple string hash
           let hash = 0;
@@ -103,19 +114,25 @@ const server = Bun.serve<SocketData>({
           ws.data.id = userId;
           ws.data.color = color;
 
-          console.log(`Client identified as ${userId.slice(0, 8)}... (${color})`);
+          console.log(
+            `Client identified as ${userId.slice(0, 8)}... (${color})`,
+          );
 
           // Confirm identity back to client
-          ws.send(JSON.stringify({
-            type: "HELLO",
-            payload: { id: userId, color },
-          }));
+          ws.send(
+            JSON.stringify({
+              type: "HELLO",
+              payload: { id: userId, color },
+            }),
+          );
 
           // NOW send the grid state
-          ws.send(JSON.stringify({
-            type: "GRID_STATE",
-            payload: Array.from(gridState.values()),
-          }));
+          ws.send(
+            JSON.stringify({
+              type: "GRID_STATE",
+              payload: Array.from(gridState.values()),
+            }),
+          );
           break;
         }
 
@@ -135,7 +152,9 @@ const server = Bun.serve<SocketData>({
 
           gridState.set(newCell.id, newCell);
 
-          console.log(`Cell ${newCell.id} captured by ${ownerId.slice(0, 8)}...`);
+          console.log(
+            `Cell ${newCell.id} captured by ${ownerId.slice(0, 8)}...`,
+          );
 
           broadcast({
             type: "CELL_UPDATED",
@@ -156,9 +175,10 @@ const server = Bun.serve<SocketData>({
       // Sending to a closed WebSocket would throw an error.
       connectedClients.delete(ws);
 
-      console.log(`Client ${ws.data.id.slice(0, 8)}... disconnected. Total clients: ${connectedClients.size}`);
+      console.log(
+        `Client ${ws.data.id.slice(0, 8)}... disconnected. Total clients: ${connectedClients.size}`,
+      );
     },
-
   },
 });
 
