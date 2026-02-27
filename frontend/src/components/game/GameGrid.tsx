@@ -25,11 +25,11 @@ export function GameGrid({
 }: GameGridProps) {
   return (
     <div
-      className='w-screen h-screen overflow-hidden'
+      className='w-screen h-screen overflow-auto'
       style={{
         display: "grid",
-        gridTemplateColumns: `repeat(${cols}, 1fr)`,
-        gridTemplateRows: `repeat(${rows}, 1fr)`,
+        gridTemplateColumns: `repeat(${cols}, minmax(40px, 1fr))`,
+        gridTemplateRows: `repeat(${rows}, minmax(40px, 1fr))`,
       }}
     >
       {cells.map((row, i) =>
