@@ -1,11 +1,13 @@
 "use client";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import type { PowerUpType } from "@/store/gameStore";
 
 type Cell = {
   id: string;
   ownerId: string | null;
   color: string;
+  powerUp?: PowerUpType;
 };
 
 type GameGridProps = {
@@ -37,26 +39,36 @@ export function GameGrid({
           const isOwnedByMe = cell.ownerId === currentUserId;
           const isNeutral = !cell.ownerId;
           const delay = (i * cols + j) * 0.0008; // Even quicker trail
+          const hasPowerUp = cell.powerUp;
           
           return (
             <motion.div
               key={cell.id}
               initial={{ opacity: 0, scale: 0.98 }} // Very small scale gap
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.08, delay, ease: "easeOut" }} // Very fast duration
+              animate={hasPowerUp ? { 
+                opacity: [1, 0.8, 1, 0.9, 1], // Glitch opacity
+                scale: [1, 1.05, 1, 0.95, 1], // Pulse effect
+                transition: { 
+                  duration: 0.8, 
+                  repeat: Infinity, 
+                  repeatType: "reverse",
+                  ease: "easeInOut"
+                } 
+              } : { opacity: 1, scale: 1 }}
+              transition={{ duration: 0.08, delay, ease: "easeOut" }} // Very fast duration for initial load
               className={cn(
-                "border cursor-pointer relative transition-colors duration-200",
-                isNeutral && "border-[#1A1A32]",
-                !isNeutral && "border-white/10",
-                isOwnedByMe && "ring-1 ring-inset ring-[#7C3AED]/70 shadow-[inset_0_0_12px_rgba(124,58,237,0.4)]"
+                "border cursor-pointer relative transition-colors duration-200 flex items-center justify-center",
+                isNeutral && !hasPowerUp && "border-[#1A1A32]",
+                !isNeutral && !hasPowerUp && "border-white/10",
+                hasPowerUp && "border-transparent bg-transparent z-20" // Power-ups pop out
               )}
-              style={{ backgroundColor: cell.color || "transparent" }}
+              style={hasPowerUp ? {} : { backgroundColor: cell.color || "transparent" }}
               whileHover={{ 
-                backgroundColor: isNeutral ? "rgba(167, 139, 250, 0.15)" : "rgba(255,255,255,0.08)",
-                scale: 0.95,
-                zIndex: 10,
-                boxShadow: isNeutral ? "0 0 15px rgba(167, 139, 250, 0.3)" : `0 0 20px ${cell.color}80`,
-                borderColor: isNeutral ? "rgba(167, 139, 250, 0.5)" : undefined,
+                backgroundColor: isNeutral && !hasPowerUp ? "rgba(167, 139, 250, 0.15)" : (hasPowerUp ? "transparent" : "rgba(255,255,255,0.08)"),
+                scale: hasPowerUp ? 1.15 : 0.95,
+                zIndex: 30,
+                boxShadow: isNeutral && !hasPowerUp ? "0 0 15px rgba(167, 139, 250, 0.3)" : (hasPowerUp ? "none" : `0 0 20px ${cell.color}80`),
+                borderColor: isNeutral && !hasPowerUp ? "rgba(167, 139, 250, 0.5)" : undefined,
                 transition: { duration: 0.2 }
               }}
               whileTap={{ 
@@ -66,8 +78,28 @@ export function GameGrid({
               }}
               onClick={() => onCellClick(i, j)}
             >
-              {/* Optional: Add a subtle inner flash overlay if recently captured, based on state. 
-                  For now we rely on the transition-colors and motion properties. */}
+              {hasPowerUp && (
+                  <motion.div 
+                    className="w-full h-full absolute inset-0 rounded-[2px]"
+                    animate={{
+                      boxShadow: [
+                        `0 0 10px ${cell.powerUp === 'OVERCLOCK' ? '#f59e0b' : '#0ea5e9'}, inset 0 0 5px ${cell.powerUp === 'OVERCLOCK' ? '#f59e0b' : '#0ea5e9'}`,
+                        `0 0 25px ${cell.powerUp === 'OVERCLOCK' ? '#fbbf24' : '#38bdf8'}, inset 0 0 15px ${cell.powerUp === 'OVERCLOCK' ? '#fbbf24' : '#38bdf8'}`,
+                        `0 0 10px ${cell.powerUp === 'OVERCLOCK' ? '#f59e0b' : '#0ea5e9'}, inset 0 0 5px ${cell.powerUp === 'OVERCLOCK' ? '#f59e0b' : '#0ea5e9'}`
+                      ],
+                      backgroundColor: [
+                        `${cell.powerUp === 'OVERCLOCK' ? '#f59e0b' : '#0ea5e9'}20`,
+                        `${cell.powerUp === 'OVERCLOCK' ? '#f59e0b' : '#0ea5e9'}60`,
+                        `${cell.powerUp === 'OVERCLOCK' ? '#f59e0b' : '#0ea5e9'}20`
+                      ]
+                    }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    <div className="flex items-center justify-center w-full h-full text-[10px] font-bold text-white uppercase tracking-widest opacity-80" style={{ textShadow: "0 0 10px rgba(255,255,255,0.8)"}}>
+                        {cell.powerUp === 'OVERCLOCK' ? '⚡' : '👁️'}
+                    </div>
+                  </motion.div>
+              )}
             </motion.div>
           );
         }),

@@ -23,8 +23,8 @@ The frontend and backend communicate exclusively over WebSockets. There is no RE
 
 1. User clicks a cell in the browser.
 2. The frontend sends a `CAPTURE_CELL` message to the backend over WebSocket.
-3. The backend validates the request, updates the in-memory grid state, and broadcasts a `CELL_UPDATED` message to all connected clients.
-4. Every connected browser receives the update and re-renders the affected cell.
+3. The backend validates the request, checks for power-ups (like `OVERCLOCK` ⚡ or `GLITCH_REVEAL` 👁️), updates the in-memory grid state, and broadcasts a `CELL_UPDATED` message to all connected clients.
+4. Every connected browser receives the update and re-renders the affected cell, applying any glitch or cascade animations instantly.
 
 ---
 
@@ -116,9 +116,10 @@ All messages are JSON strings. The client and server communicate using the follo
 ```typescript
 type Cell = {
   id: string; // Format: "{row}-{col}", e.g. "5-10"
-  ownerId: string; // UUID of the player who captured this cell
+  ownerId: string | null; // UUID of the player, or null if neutral
   color: string; // Hex color assigned to that player
   timestamp: number; // Unix timestamp in milliseconds
+  powerUp?: "OVERCLOCK" | "GLITCH_REVEAL"; // Optional power-up modifier 
 };
 ```
 
@@ -145,7 +146,7 @@ type Cell = {
 - [ ] Global Leaderboard tracking top capturers
 - [ ] Configurable User nicknames
 - [ ] Minimap for large geographic grids
-- [ ] Smooth CSS Animations and sound effects
+- [x] Smooth CSS Animations, Glitches, and Power-ups
 
 ---
 

@@ -2,11 +2,14 @@ import { create } from "zustand";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export type PowerUpType = "OVERCLOCK" | "GLITCH_REVEAL";
+
 export type Cell = {
   id: string;           // e.g. "10-5"
   ownerId: string | null;
   color: string;        // hex color of the owner, or default empty color
   timestamp: number;    // for conflict resolution
+  powerUp?: PowerUpType;
 };
 
 export type Player = {
@@ -137,15 +140,13 @@ export const useGameStore = create<GameState>((set, get) => {
     /**
      * Apply a server-authoritative cell update.
      * Called when the server broadcasts CELL_UPDATED.
-     * Uses timestamp to resolve conflicts (last-write-wins).
+     * The server is always authoritative — we always apply its update.
+     * This ensures power-up spawns and captures are synced across all tabs.
      */
     applyServerUpdate: (row, col, serverCell) => {
       const { cells } = get();
       const existing = cells[row]?.[col];
       if (!existing) return;
-
-      // Only apply if server update is newer
-      if (serverCell.timestamp < existing.timestamp) return;
 
       const newCells = cells.map((r, i) =>
         i !== row
